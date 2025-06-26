@@ -1,53 +1,12 @@
-# Ignore Python bytecode and cache
-__pycache__/
-*.py[cod]
-*.pyo
-
-# Ignore virtual environment
-venv/
-.env/
-.envrc
-
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
-# Ignore VS Code config
-.vscode/
-
-# Ignore PyCharm config
-.idea/
-
-# Ignore logs and temporary files
-*.log
-*.tmp
-*.swp
-
-# Ignore system files
-.DS_Store
-Thumbs.db
-
-# Ignore test coverage reports
-htmlcov/
-.coverage
-coverage.xml
-.cache
-
-# Ignore build/output directories
-build/
-dist/
-*.egg-info/
-
-# Ignore all .pkl files (models, preprocessors, etc.)
-*.pkl
-
-.venv/bin/
-
-.venv/
+# =============================================================================
+# PYTHON DEVELOPMENT
+# =============================================================================
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
 
 # C extensions
 *.so
@@ -74,8 +33,6 @@ share/python-wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -83,42 +40,68 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/bin/
+
+# Python version management
+.python-version
+
+# pipenv
+#Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# =============================================================================
+# DEVELOPMENT TOOLS & IDEs
+# =============================================================================
+
+# VS Code
+.vscode/
+
+# PyCharm / IntelliJ
+.idea/
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# Vim
+*.swp
+*.swo
+
+# =============================================================================
+# TESTING & COVERAGE
+# =============================================================================
+
+# Coverage reports
 htmlcov/
-.tox/
-.nox/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
+
+# Test frameworks
+.tox/
+.nox/
 .hypothesis/
 .pytest_cache/
+nosetests.xml
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
+# =============================================================================
+# JUPYTER & IPYTHON
+# =============================================================================
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -127,52 +110,47 @@ target/
 profile_default/
 ipython_config.py
 
-# pyenv
-.python-version
+# =============================================================================
+# WEB FRAMEWORKS
+# =============================================================================
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+# Django
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
+# Flask
+instance/
+.webassets-cache
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+# Scrapy
+.scrapy
 
-# SageMath parsed files
-*.sage.py
+# =============================================================================
+# DOCUMENTATION
+# =============================================================================
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+# Sphinx
+docs/_build/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
+# mkdocs
 /site
+
+# =============================================================================
+# TYPE CHECKING
+# =============================================================================
 
 # mypy
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# Pyre type checker
+# Pyre
 .pyre/
+
+# =============================================================================
+# MACHINE LEARNING & DATA SCIENCE
+# =============================================================================
 
 # MLflow
 mlruns/
@@ -194,21 +172,42 @@ mlflow.db
 *.parquet
 *.feather
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# SageMath
+*.sage.py
 
-# OS
+# =============================================================================
+# TASK QUEUES & BACKGROUND JOBS
+# =============================================================================
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# =============================================================================
+# INTERNATIONALIZATION
+# =============================================================================
+
+# Translations
+*.mo
+*.pot
+
+# =============================================================================
+# OPERATING SYSTEM
+# =============================================================================
+
+# macOS
 .DS_Store
+
+# Windows
 Thumbs.db
 
-# CI/CD generated files
-bandit-report.json
-.coverage
-htmlcov/
-.pytest_cache/
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
+
+# Log files
+*.log
+deployment/logs/
 
 # Temporary files
 *.tmp
@@ -216,9 +215,9 @@ htmlcov/
 *.bak
 *.backup
 
-# Logs
-*.log
-deployment/logs/
+# =============================================================================
+# INFRASTRUCTURE & DEPLOYMENT
+# =============================================================================
 
 # Docker
 .dockerignore
@@ -236,13 +235,34 @@ deployment/logs/
 # AWS
 .aws/
 
-# Local development
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+
+# Environment files
+.envrc
 .env.local
 .env.development
 .env.test
 .env.production
 
-deployment/metabase/data/metabase.db.mv.db
+# Configuration files (moved to configs/)
+configs/.env
+configs/.env.local
+configs/.env.development
+configs/.env.test
+configs/.env.production
+
+# =============================================================================
+# CI/CD & SECURITY
+# =============================================================================
+
+# Security reports
+bandit-report.json
+
+# =============================================================================
+# PROJECT-SPECIFIC DATA
+# =============================================================================
 
 # Metabase H2 Database files
 deployment/metabase/data/metabase.db.mv.db
@@ -256,11 +276,6 @@ deployment/metabase/data/metabase.db.script.backup
 deployment/metabase/data/metabase.db/metabase.db.mv.db
 deployment/metabase/data/metabase.db/metabase.db.trace.db
 
-# Configuration files (moved to configs/)
-configs/.env
-configs/.env.local
-configs/.env.development
-configs/.env.test
-configs/.env.production
+# DWH Database files
 src/ml/data/dwh/data/house_price_dwh.duckdb
 src/ml/data/dwh/data/house_price_dwh.duckdb.wal
