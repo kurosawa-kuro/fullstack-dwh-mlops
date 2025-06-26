@@ -1,6 +1,7 @@
 /home/wsl/dev/mlops/fullstack-dwh-mlops/src/data/dwh/dwh/house_price_dbtの配置を見直す
 
-dwhmdvtのみなおそみなおそ
+dwh dbtの見直しができ次第、汎用化作戦開始
+なんらかのKaggle ECshop系が良いのではないか
 
 dbt 対応のCI修正
 dbt 基礎の集中学習
