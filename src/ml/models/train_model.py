@@ -20,9 +20,38 @@ from sklearn.pipeline import Pipeline  # パイプライン構築のためのク
 from sklearn.preprocessing import LabelEncoder  # ラベルエンコーダー
 from sklearn.preprocessing import OneHotEncoder, StandardScaler  # 前処理クラス
 
-import mlflow  # MLflowのメインモジュール
-import mlflow.sklearn  # scikit-learnモデル用のMLflowモジュール
-from mlflow.tracking import MlflowClient  # MLflowクライアント
+# MLflowの条件付きインポート
+try:
+    import mlflow  # MLflowのメインモジュール
+    import mlflow.sklearn  # scikit-learnモデル用のMLflowモジュール
+    from mlflow.tracking import MlflowClient  # MLflowクライアント
+    MLFLOW_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+    logger.info("MLflow is available")
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"MLflow not available: {e}")
+    MLFLOW_AVAILABLE = False
+    # ダミーのmlflowオブジェクトを作成
+    class DummyMLflow:
+        def __init__(self):
+            self.active_run = None
+        def log_metric(self, *args, **kwargs):
+            pass
+        def log_params(self, *args, **kwargs):
+            pass
+        def log_model(self, *args, **kwargs):
+            pass
+        def start_run(self, *args, **kwargs):
+            return self
+        def end_run(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args, **kwargs):
+            pass
+    
+    mlflow = DummyMLflow()
 
 # -----------------------------
 # Configure logging
@@ -230,7 +259,8 @@ def main(args):
         config = yaml.safe_load(f)  # YAMLファイルを読み込み
     model_cfg = config["model"]  # モデル設定を取得
 
-    if args.mlflow_tracking_uri:  # MLflow追跡URIが指定されている場合
+    # MLflowの設定（利用可能な場合のみ）
+    if MLFLOW_AVAILABLE and args.mlflow_tracking_uri:  # MLflow追跡URIが指定されている場合
         mlflow.set_tracking_uri(args.mlflow_tracking_uri)  # MLflow追跡URIを設定
         mlflow.set_experiment(model_cfg["name"])  # 実験名を設定
 
@@ -277,98 +307,124 @@ def main(args):
         model_cfg["best_model"], model_cfg["parameters"]
     )  # モデルインスタンスを作成
 
-    # Start MLflow run
-    with mlflow.start_run(run_name="final_training"):  # MLflow実行を開始
-        logger.info(f"Training model: {model_cfg['best_model']}")  # モデル学習開始のログ
+    # Start MLflow run (if available)
+    if MLFLOW_AVAILABLE:
+        with mlflow.start_run(run_name="final_training"):  # MLflow実行を開始
+            logger.info(f"Training model: {model_cfg['best_model']}")  # モデル学習開始のログ
+            model.fit(X_train, y_train)  # モデルを学習
+            y_pred = model.predict(X_test)  # テストデータで予測
+
+            mae = float(mean_absolute_error(y_test, y_pred))  # 平均絶対誤差を計算
+            r2 = float(r2_score(y_test, y_pred))  # 決定係数を計算
+
+            # Log params and metrics
+            mlflow.log_params(model_cfg["parameters"])  # パラメータをログに記録
+            mlflow.log_metrics({"mae": mae, "r2": r2})  # 評価指標をログに記録
+
+            # Log and register model
+            mlflow.sklearn.log_model(
+                model,
+                "tuned_model",
+                input_example=X_test[:1],
+                registered_model_name=model_cfg["name"],
+            )  # モデルをログに記録して登録
+            model_name = model_cfg["name"]  # モデル名を取得
+            model_uri = f"runs:/{mlflow.active_run().info.run_id}/tuned_model"  # モデルURIを構築
+
+            logger.info("Registering model to MLflow Model Registry...")  # モデル登録開始のログ
+            client = MlflowClient()  # MLflowクライアントを作成
+            try:
+                client.create_registered_model(model_name)  # 登録モデルを作成
+            except Exception as e:  # 例外が発生した場合
+                if "already exists" in str(e):  # 既に存在する場合
+                    logger.info(
+                        f"Model {model_name} already exists, skipping creation"
+                    )  # 既存モデルのログ
+                else:  # その他の例外の場合
+                    raise e  # 例外を再発生
+
+            model_version = client.create_model_version(
+                name=model_name, source=model_uri, run_id=mlflow.active_run().info.run_id
+            )  # モデルバージョンを作成
+
+            # Transition model to "Staging"
+            client.transition_model_version_stage(
+                name=model_name, version=model_version.version, stage="Staging"
+            )  # モデルをステージング段階に移行
+
+            # Add a human-readable description
+            description = (
+                f"Model for predicting house prices using DuckDB data.\n"
+                f"Algorithm: {model_cfg['best_model']}\n"
+                f"Hyperparameters: {model_cfg['parameters']}\n"
+                f"Features used: {features_used}\n"
+                f"Target variable: {target}\n"
+                f"Data source: DuckDB view '{args.view_name}'\n"
+                f"Model saved at: {args.models_dir}/trained/{model_name}.pkl\n"
+                f"Performance metrics:\n"
+                f"  - MAE: {mae:.2f}\n"
+                f"  - R²: {r2:.4f}"
+            )  # モデルの説明文を作成
+            client.update_registered_model(
+                name=model_name, description=description
+            )  # 登録モデルの説明を更新
+
+            # Add tags for better organization
+            client.set_registered_model_tag(
+                model_name, "algorithm", model_cfg["best_model"]
+            )  # アルゴリズムタグを設定
+            client.set_registered_model_tag(
+                model_name, "hyperparameters", str(model_cfg["parameters"])
+            )  # ハイパーパラメータタグを設定
+            client.set_registered_model_tag(
+                model_name, "features", str(features_used)
+            )  # 特徴量タグを設定
+            client.set_registered_model_tag(
+                model_name, "target_variable", target
+            )  # ターゲット変数タグを設定
+            client.set_registered_model_tag(
+                model_name, "data_source", f"DuckDB view: {args.view_name}"
+            )  # データソースタグを設定
+            client.set_registered_model_tag(
+                model_name, "model_path", f"{args.models_dir}/trained/{model_name}.pkl"
+            )  # モデルパスタグを設定
+
+            # Add dependency tags
+            deps = {
+                "python_version": platform.python_version(),  # Pythonバージョン
+                "scikit_learn_version": sklearn.__version__,  # scikit-learnバージョン
+                "xgboost_version": xgb.__version__,  # XGBoostバージョン
+                "pandas_version": pd.__version__,  # pandasバージョン
+                "numpy_version": np.__version__,  # numpyバージョン
+                "duckdb_version": duckdb.__version__,  # DuckDBバージョン
+            }  # 依存関係のバージョン情報
+            for k, v in deps.items():  # 各依存関係について
+                client.set_registered_model_tag(model_name, k, v)  # タグを設定
+
+            # Save model and label encoders locally
+            import os
+
+            os.makedirs(f"{args.models_dir}/trained", exist_ok=True)  # ディレクトリを作成
+
+            # モデルを保存
+            model_save_path = f"{args.models_dir}/trained/{model_name}.pkl"  # 保存パスを構築
+            joblib.dump(model, model_save_path)  # モデルをローカルに保存
+
+            # ラベルエンコーダーを保存
+            encoders_save_path = f"{args.models_dir}/trained/{model_name}_encoders.pkl"
+            joblib.dump(preprocessor, encoders_save_path)
+
+            logger.info(f"Saved trained model to: {model_save_path}")  # モデル保存完了のログ
+            logger.info(f"Saved preprocessor to: {encoders_save_path}")  # 前処理器保存完了のログ
+            logger.info(f"Final MAE: {mae:.2f}, R²: {r2:.4f}")  # 最終評価指標のログ
+    else:
+        # MLflowが利用できない場合はローカル保存のみ
+        logger.info(f"Training model: {model_cfg['best_model']} (MLflow disabled)")  # モデル学習開始のログ
         model.fit(X_train, y_train)  # モデルを学習
         y_pred = model.predict(X_test)  # テストデータで予測
 
         mae = float(mean_absolute_error(y_test, y_pred))  # 平均絶対誤差を計算
         r2 = float(r2_score(y_test, y_pred))  # 決定係数を計算
-
-        # Log params and metrics
-        mlflow.log_params(model_cfg["parameters"])  # パラメータをログに記録
-        mlflow.log_metrics({"mae": mae, "r2": r2})  # 評価指標をログに記録
-
-        # Log and register model
-        mlflow.sklearn.log_model(
-            model,
-            "tuned_model",
-            input_example=X_test[:1],
-            registered_model_name=model_cfg["name"],
-        )  # モデルをログに記録して登録
-        model_name = model_cfg["name"]  # モデル名を取得
-        model_uri = f"runs:/{mlflow.active_run().info.run_id}/tuned_model"  # モデルURIを構築
-
-        logger.info("Registering model to MLflow Model Registry...")  # モデル登録開始のログ
-        client = MlflowClient()  # MLflowクライアントを作成
-        try:
-            client.create_registered_model(model_name)  # 登録モデルを作成
-        except Exception as e:  # 例外が発生した場合
-            if "already exists" in str(e):  # 既に存在する場合
-                logger.info(
-                    f"Model {model_name} already exists, skipping creation"
-                )  # 既存モデルのログ
-            else:  # その他の例外の場合
-                raise e  # 例外を再発生
-
-        model_version = client.create_model_version(
-            name=model_name, source=model_uri, run_id=mlflow.active_run().info.run_id
-        )  # モデルバージョンを作成
-
-        # Transition model to "Staging"
-        client.transition_model_version_stage(
-            name=model_name, version=model_version.version, stage="Staging"
-        )  # モデルをステージング段階に移行
-
-        # Add a human-readable description
-        description = (
-            f"Model for predicting house prices using DuckDB data.\n"
-            f"Algorithm: {model_cfg['best_model']}\n"
-            f"Hyperparameters: {model_cfg['parameters']}\n"
-            f"Features used: {features_used}\n"
-            f"Target variable: {target}\n"
-            f"Data source: DuckDB view '{args.view_name}'\n"
-            f"Model saved at: {args.models_dir}/trained/{model_name}.pkl\n"
-            f"Performance metrics:\n"
-            f"  - MAE: {mae:.2f}\n"
-            f"  - R²: {r2:.4f}"
-        )  # モデルの説明文を作成
-        client.update_registered_model(
-            name=model_name, description=description
-        )  # 登録モデルの説明を更新
-
-        # Add tags for better organization
-        client.set_registered_model_tag(
-            model_name, "algorithm", model_cfg["best_model"]
-        )  # アルゴリズムタグを設定
-        client.set_registered_model_tag(
-            model_name, "hyperparameters", str(model_cfg["parameters"])
-        )  # ハイパーパラメータタグを設定
-        client.set_registered_model_tag(
-            model_name, "features", str(features_used)
-        )  # 特徴量タグを設定
-        client.set_registered_model_tag(
-            model_name, "target_variable", target
-        )  # ターゲット変数タグを設定
-        client.set_registered_model_tag(
-            model_name, "data_source", f"DuckDB view: {args.view_name}"
-        )  # データソースタグを設定
-        client.set_registered_model_tag(
-            model_name, "model_path", f"{args.models_dir}/trained/{model_name}.pkl"
-        )  # モデルパスタグを設定
-
-        # Add dependency tags
-        deps = {
-            "python_version": platform.python_version(),  # Pythonバージョン
-            "scikit_learn_version": sklearn.__version__,  # scikit-learnバージョン
-            "xgboost_version": xgb.__version__,  # XGBoostバージョン
-            "pandas_version": pd.__version__,  # pandasバージョン
-            "numpy_version": np.__version__,  # numpyバージョン
-            "duckdb_version": duckdb.__version__,  # DuckDBバージョン
-        }  # 依存関係のバージョン情報
-        for k, v in deps.items():  # 各依存関係について
-            client.set_registered_model_tag(model_name, k, v)  # タグを設定
 
         # Save model and label encoders locally
         import os
@@ -376,6 +432,7 @@ def main(args):
         os.makedirs(f"{args.models_dir}/trained", exist_ok=True)  # ディレクトリを作成
 
         # モデルを保存
+        model_name = model_cfg["name"]  # モデル名を取得
         model_save_path = f"{args.models_dir}/trained/{model_name}.pkl"  # 保存パスを構築
         joblib.dump(model, model_save_path)  # モデルをローカルに保存
 

@@ -53,35 +53,52 @@ help:
 # 仮想環境セットアップ
 venv:
 	@echo "🐍 仮想環境を作成中..."
-	@if [ ! -d ".venv" ]; then \
+	@if [ ! -d ".venv" ] && [ ! -d "venv" ]; then \
 		python3 -m venv .venv; \
-		echo "✅ 仮想環境を作成しました"; \
-	else \
-		echo "✅ 仮想環境は既に存在します"; \
+		echo "✅ 仮想環境を作成しました (.venv)"; \
+	elif [ -d ".venv" ]; then \
+		echo "✅ 仮想環境は既に存在します (.venv)"; \
+	elif [ -d "venv" ]; then \
+		echo "✅ 仮想環境は既に存在します (venv)"; \
 	fi
-	@echo "📝 仮想環境をアクティベートするには: source .venv/bin/activate"
+	@echo "📝 仮想環境をアクティベートするには: source .venv/bin/activate または source venv/bin/activate"
 	@echo "📝 または、make install を実行して依存関係をインストールしてください"
+
+# 仮想環境のパスを取得する関数
+define get_venv_path
+	$(shell if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi)
+endef
 
 # 依存関係インストール
 deps-dev:
 	@echo "📦 開発用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r configs/requirements-dev.txt; \
+		echo "✅ .venv ディレクトリを使用"; \
+		.venv/bin/pip install -r configs/requirements.txt; \
+		echo "✅ 開発用依存関係インストール完了 (.venv)"; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/pip install -r configs/requirements.txt; \
+		echo "✅ 開発用依存関係インストール完了 (venv)"; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ 開発用依存関係インストール完了"
 
 deps-prod:
 	@echo "📦 本番用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r configs/requirements-prod.txt; \
+		echo "✅ .venv ディレクトリを使用"; \
+		.venv/bin/pip install -r configs/requirements.txt; \
+		echo "✅ 本番用依存関係インストール完了 (.venv)"; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/pip install -r configs/requirements.txt; \
+		echo "✅ 本番用依存関係インストール完了 (venv)"; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ 本番用依存関係インストール完了"
 
 # 全テスト実行
 test: test-unit test-integ test-e2e
@@ -91,7 +108,11 @@ test: test-unit test-integ test-e2e
 test-unit:
 	@echo "🧪 単体テスト実行中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/pytest tests/unit/ -v; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/pytest tests/unit/ -v; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -102,7 +123,11 @@ test-unit:
 test-integ:
 	@echo "🔗 統合テスト実行中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/pytest tests/integration/ -v; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/pytest tests/integration/ -v; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -113,7 +138,11 @@ test-integ:
 test-e2e:
 	@echo "🌐 E2Eテスト実行中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/pytest tests/e2e/ -v; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/pytest tests/e2e/ -v; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -124,8 +153,13 @@ test-e2e:
 format:
 	@echo "🎨 コードフォーマット中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/black src/ tests/; \
 		.venv/bin/isort src/ tests/; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/black src/ tests/; \
+		venv/bin/isort src/ tests/; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -148,7 +182,15 @@ clean:
 train:
 	@echo "🔧 モデル訓練中（既存モデルがあればスキップ）..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/python src/ml/models/train_model.py \
+			--config src/configs/model_config.yaml \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name bronze_raw_house_data; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
 			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
@@ -163,7 +205,16 @@ train:
 train-force:
 	@echo "🔧 モデル強制再訓練中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/python src/ml/models/train_model.py \
+			--config src/configs/model_config.yaml \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name bronze_raw_house_data \
+			--force-retrain; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
 			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
@@ -176,7 +227,7 @@ train-force:
 	@echo "✅ モデル強制再訓練完了"
 
 # 全パイプライン実行（lintスキップ）
-pipeline: clean install test train
+pipeline: clean deps-dev test train
 	@echo "🚀 全パイプライン実行完了"
 
 # 一括実行（全パイプライン）
@@ -184,7 +235,7 @@ pipeline-all: clean deps-dev test dwh-bronze dbt train-dbt
 	@echo "🚀 一括実行（全パイプライン）完了"
 
 # クイックパイプライン実行（既存モデルがあればスキップ）
-pipeline-quick: clean install test train
+pipeline-quick: clean deps-dev test train
 	@echo "⚡ クイックパイプライン実行完了"
 
 # リリース用タグ作成
@@ -198,8 +249,9 @@ release:
 # 開発環境セットアップ
 setup-dev: dev-setup
 	@echo "🔧 開発環境セットアップ中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/pre-commit install; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/pre-commit install; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -209,8 +261,9 @@ setup-dev: dev-setup
 # モデル性能確認
 check-model:
 	@echo "📊 モデル性能確認中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python test_model.py; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python test_model.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -234,7 +287,11 @@ status:
 dwh-bronze:
 	@echo "🗄️ DWH Bronze層データ取り込み中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -245,7 +302,11 @@ dwh-bronze:
 dwh-explore:
 	@echo "🔍 DWHデータの探索・分析中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/python src/ml/data/dwh/scripts/explore_dwh.py; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/python src/ml/data/dwh/scripts/explore_dwh.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -270,7 +331,22 @@ dwh-backup:
 dwh-stats:
 	@echo "📊 DWH統計情報表示中..."
 	@if [ -d ".venv" ]; then \
+		echo "✅ .venv ディレクトリを使用"; \
 		.venv/bin/python -c "import duckdb; import os; db_path='src/ml/data/dwh/data/house_price_dwh.duckdb'; \
+		if os.path.exists(db_path): \
+			con = duckdb.connect(db_path); \
+			result = con.execute('SELECT COUNT(*) FROM fact_house_transactions').fetchone(); \
+			print(f'📈 総レコード数: {result[0]:,}'); \
+			stats = con.execute('SELECT * FROM v_summary_statistics').fetchone(); \
+			print(f'💰 平均価格: $${stats[1]:,.2f}'); \
+			print(f'📏 平均面積: {stats[5]:,.0f} sqft'); \
+			con.close(); \
+		else: \
+			print('❌ DWHデータベースが見つかりません'); \
+		"; \
+	elif [ -d "venv" ]; then \
+		echo "✅ venv ディレクトリを使用"; \
+		venv/bin/python -c "import duckdb; import os; db_path='src/ml/data/dwh/data/house_price_dwh.duckdb'; \
 		if os.path.exists(db_path): \
 			con = duckdb.connect(db_path); \
 			result = con.execute('SELECT COUNT(*) FROM fact_house_transactions').fetchone(); \
@@ -381,8 +457,9 @@ dwh-unlock:
 # アンサンブルモデル訓練（デフォルト設定）
 train-ensemble:
 	@echo "🔧 アンサンブルモデル訓練中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/models/training/train_ensemble.py \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python src/models/training/train_ensemble.py \
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
@@ -396,8 +473,9 @@ train-ensemble:
 # Voting Ensemble訓練
 train-ensemble-voting:
 	@echo "🔧 Voting Ensemble訓練中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/models/training/train_ensemble.py \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python src/models/training/train_ensemble.py \
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
@@ -412,8 +490,9 @@ train-ensemble-voting:
 # Stacking Ensemble訓練
 train-ensemble-stacking:
 	@echo "🔧 Stacking Ensemble訓練中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/models/training/train_ensemble.py \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python src/models/training/train_ensemble.py \
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
@@ -428,8 +507,9 @@ train-ensemble-stacking:
 # アンサンブルモデル性能確認
 check-ensemble:
 	@echo "📊 アンサンブルモデル性能確認中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
 model = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb.pkl'); \
 preprocessor = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl'); \
 print('✅ アンサンブルモデル読み込み成功'); \
@@ -452,8 +532,9 @@ print('📈 アンサンブル予測結果:', prediction[0] if len(prediction) >
 # Bronze層データ取り込み
 ingest:
 	@echo "🗄️ DWH構築とデータインジェスション中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -463,9 +544,10 @@ ingest:
 # dbtで全層（Bronze/Silver/Gold）作成
 dbt:
 	@echo "🔄 dbtで全層（Bronze/Silver/Gold）作成中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/dbt run --project-dir src/ml/data/dwh/house_price_dbt && \
-		.venv/bin/dbt test --project-dir src/ml/data/dwh/house_price_dbt; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/dbt run --project-dir src/ml/data/dwh/house_price_dbt && \
+		$$VENV_PATH/bin/dbt test --project-dir src/ml/data/dwh/house_price_dbt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -474,8 +556,9 @@ dbt:
 # dbtドキュメント生成
 docs:
 	@echo "📄 dbtドキュメント生成中..."
-	@if [ -d ".venv" ]; then \
-		cd src/ml/data/dwh/house_price_dbt && ../../../.venv/bin/dbt docs generate && ../../../.venv/bin/dbt docs serve; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		cd src/ml/data/dwh/house_price_dbt && ../../../$$VENV_PATH/bin/dbt docs generate && ../../../$$VENV_PATH/bin/dbt docs serve; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -484,8 +567,9 @@ docs:
 # dbt学習スクリプト実行
 train-dbt:
 	@echo "🔧 dbt学習スクリプト実行中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/house_price_dbt/train.py; \
+	@VENV_PATH=$$(if [ -d ".venv" ]; then echo ".venv"; elif [ -d "venv" ]; then echo "venv"; else echo ""; fi); \
+	if [ -n "$$VENV_PATH" ]; then \
+		$$VENV_PATH/bin/python src/ml/data/dwh/house_price_dbt/train.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
