@@ -72,6 +72,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip'  # pipキャッシュを有効化
 
       - name: Generate cache key
         id: cache-key
@@ -114,6 +115,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip'  # pipキャッシュを有効化
 
       - name: Restore pip cache
         uses: actions/cache@v4
@@ -244,6 +246,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip'  # pipキャッシュを有効化
 
       - name: Restore pip cache
         uses: actions/cache@v4
@@ -258,9 +261,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install mlflow==3.1.0  # バージョン固定
           pip install -r configs/requirements.txt
-          # mlflowの追加インストール確認
-          pip install mlflow[extras] scikit-learn
           python -c "import mlflow; print(f'MLflow version: {mlflow.__version__}')"
 
       - name: Download DWH artifacts
@@ -276,29 +278,31 @@ jobs:
           mkdir -p mlruns
 
       - name: Initialize MLflow
+        env:
+          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/mlruns"  # 絶対パスで指定
+          MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          export MLFLOW_TRACKING_URI="file:./mlruns"
-          export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
           
           python -c "
           import mlflow
-          mlflow.set_tracking_uri('file:./mlruns')
+          mlflow.set_tracking_uri('file://${{ github.workspace }}/mlruns')
           mlflow.set_experiment('house_price_prediction')
           print('✅ MLflow初期化完了')
           "
 
       - name: Run ML pipeline
+        env:
+          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/mlruns"
+          MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          export MLFLOW_TRACKING_URI="file:./mlruns"
-          export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
           python src/ml/models/train_model.py \
             --config src/configs/model_config.yaml \
             --duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
             --models-dir src/ml/models \
             --view-name v_house_analytics \
-            --mlflow-tracking-uri "file:./mlruns"
+            --mlflow-tracking-uri "file://${{ github.workspace }}/mlruns"
 
       - name: Verify model artifacts
         run: |
@@ -350,6 +354,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip'  # pipキャッシュを有効化
 
       - name: Restore pip cache
         uses: actions/cache@v4
@@ -426,6 +431,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
+          cache: 'pip'  # pipキャッシュを有効化
 
       - name: Restore pip cache
         uses: actions/cache@v4

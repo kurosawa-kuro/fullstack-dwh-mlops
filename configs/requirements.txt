@@ -19,7 +19,7 @@ seaborn==0.12.2        # High-level interface for drawing attractive and informa
 # ---------------------------------------------
 # 📦 EXPERIMENT TRACKING & MODEL MANAGEMENT
 # ---------------------------------------------
-mlflow>=2.10.0
+mlflow==3.1.0          # Fixed version for experiment tracking and model management
 
 # ---------------------------------------------
 # ✅ TESTING
