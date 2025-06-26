@@ -11,8 +11,8 @@ def debug_ensemble():
     """アンサンブルモデルをデバッグ"""
     try:
         # アンサンブルモデルと前処理器を読み込み
-        model = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb.pkl')
-        preprocessor = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl')
+        model = joblib.load('src/ml/artifacts/house_price_ensemble_duckdb.pkl')
+        preprocessor = joblib.load('src/ml/artifacts/house_price_ensemble_duckdb_preprocessor.pkl')
         print('✅ アンサンブルモデル読み込み成功')
         
         # モデル情報を確認

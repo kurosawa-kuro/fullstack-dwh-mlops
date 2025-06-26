@@ -3,7 +3,7 @@ app:
   name: House Price Predictor
   version: 1.0.0
 database:
-  path: models/trained/house_price_dwh.duckdb
+  path: src/ml/artifacts/house_price_dwh.duckdb
   type: duckdb
 ensemble: {}
 logging:

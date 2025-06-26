@@ -11,8 +11,8 @@ def test_model():
     """モデルをテスト"""
     try:
         # モデルと前処理器を読み込み
-        model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
-        preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
+        model = joblib.load('src/ml/artifacts/house_price_prediction.pkl')
+        preprocessor = joblib.load('src/ml/artifacts/house_price_prediction_encoders.pkl')
         print('✅ モデル読み込み成功')
         
         # サンプルデータを作成

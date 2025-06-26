@@ -34,7 +34,7 @@ def migrate_config():
         },
         'database': {
             'type': 'duckdb',
-            'path': 'models/trained/house_price_dwh.duckdb'
+            'path': 'src/ml/artifacts/house_price_dwh.duckdb'
         },
         'mlflow': {
             'tracking_uri': 'http://localhost:5555',
@@ -104,7 +104,7 @@ APP_ENVIRONMENT=development
 
 # データベース設定
 DB_TYPE=duckdb
-DB_PATH=models/trained/house_price_dwh.duckdb
+DB_PATH=src/ml/artifacts/house_price_dwh.duckdb
 
 # MLflow設定
 MLFLOW_TRACKING_URI=http://localhost:5555
@@ -141,7 +141,7 @@ APP_ENVIRONMENT=development
 
 # データベース設定
 DB_TYPE=duckdb
-DB_PATH=models/trained/house_price_dwh.duckdb
+DB_PATH=src/ml/artifacts/house_price_dwh.duckdb
 
 # MLflow設定
 MLFLOW_TRACKING_URI=http://localhost:5555

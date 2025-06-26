@@ -23,7 +23,7 @@ class Config(BaseSettings):
     # データベース設定
     db_type: str = Field(default="duckdb", description="データベースタイプ")
     db_path: str = Field(
-        default="models/trained/house_price_dwh.duckdb", description="データベースパス"
+        default="src/ml/artifacts/house_price_dwh.duckdb", description="データベースパス"
     )
 
     # MLflow設定

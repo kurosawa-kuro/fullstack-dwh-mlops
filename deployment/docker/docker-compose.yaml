@@ -9,8 +9,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MODEL_PATH=/app/models/trained/house_price_prediction.pkl
-      - PREPROCESSOR_PATH=/app/models/trained/preprocessor.pkl
+      - MODEL_PATH=/app/src/ml/artifacts/house_price_prediction.pkl
+      - PREPROCESSOR_PATH=/app/src/ml/artifacts/preprocessor.pkl
     volumes:
       - ./models/trained:/app/models/trained
     networks:

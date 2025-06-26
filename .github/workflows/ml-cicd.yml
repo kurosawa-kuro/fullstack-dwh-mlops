@@ -244,11 +244,11 @@ jobs:
       - name: Verify model artifacts
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          ls -la src/ml/models/trained/
+          ls -la src/ml/src/ml/artifacts/
           python -c "
           import joblib
-          model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
-          preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
+          model = joblib.load('src/ml/src/ml/artifacts/house_price_prediction.pkl')
+          preprocessor = joblib.load('src/ml/src/ml/artifacts/house_price_prediction_encoders.pkl')
           print('✅ モデルと前処理器の読み込み成功')
           "
 
@@ -257,8 +257,8 @@ jobs:
         with:
           name: trained-models-${{ github.sha }}
           path: |
-            src/ml/models/trained/house_price_prediction.pkl
-            src/ml/models/trained/house_price_prediction_encoders.pkl
+            src/ml/src/ml/artifacts/house_price_prediction.pkl
+            src/ml/src/ml/artifacts/house_price_prediction_encoders.pkl
           retention-days: 30
 
       - name: Verify MLflow artifacts exist
@@ -447,8 +447,8 @@ jobs:
           data = conn.execute('SELECT * FROM v_house_analytics LIMIT 5').fetchdf()
           conn.close()
           
-          model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
-          preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
+          model = joblib.load('src/ml/src/ml/artifacts/house_price_prediction.pkl')
+          preprocessor = joblib.load('src/ml/src/ml/artifacts/house_price_prediction_encoders.pkl')
           
           sample = data.iloc[0:1]
           X = pd.DataFrame({
@@ -472,8 +472,8 @@ jobs:
       - name: Model performance summary
         run: |
           echo "🎯 モデル性能テスト完了（DuckDB対応）"
-          echo "📊 モデルファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction.pkl | awk '{print $5}')"
-          echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction_encoders.pkl | awk '{print $5}')"
+          echo "📊 モデルファイルサイズ: $(ls -lh src/ml/src/ml/artifacts/house_price_prediction.pkl | awk '{print $5}')"
+          echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/src/ml/artifacts/house_price_prediction_encoders.pkl | awk '{print $5}')"
           echo "📊 DuckDBデータベースサイズ: $(ls -lh src/ml/data/dwh/data/house_price_dwh.duckdb | awk '{print $5}')"
 
   # 最終レポート（全ジョブ完了後）

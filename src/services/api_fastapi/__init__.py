@@ -1,9 +1,11 @@
 """
-House Price Prediction API Package.
+Utilities package for house price prediction API.
 
-This package contains the FastAPI application for house price prediction.
+This package contains helper functions and utilities.
 """
 
-__version__ = "1.0.0"
-__author__ = "Gourav Shah"
-__description__ = "House Price Prediction API for MLOps Bootcamp"
+from typing import List
+
+from .helpers import *
+
+__all__: List[str] = ["validate_house_data", "format_prediction_response"]

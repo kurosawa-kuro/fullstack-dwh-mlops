@@ -29,7 +29,7 @@ def create_sample_data():
 
 def build_dwh():
     """DuckDB DWHを構築"""
-    db_path = pathlib.Path('src/ml/data/dwh/data')
+    db_path = pathlib.Path('src/data/warehouse/duckdb/data')
     db_path.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(db_path / 'house_price_dwh.duckdb')
 

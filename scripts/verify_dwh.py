@@ -10,8 +10,8 @@ import sys
 
 def verify_dwh():
     """DuckDB DWHの内容を確認"""
-    db_path = 'src/ml/data/dwh/data/house_price_dwh.duckdb'
-    wal_path = 'src/ml/data/dwh/data/house_price_dwh.duckdb.wal'
+    db_path = 'src/data/warehouse/duckdb/data/house_price_dwh.duckdb'
+    wal_path = 'src/data/warehouse/duckdb/data/house_price_dwh.duckdb.wal'
     
     if not os.path.exists(db_path):
         print(f"❌ Database file not found: {db_path}")

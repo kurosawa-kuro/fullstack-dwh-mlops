@@ -14,7 +14,7 @@ class TestDWHIntegration:
     @pytest.fixture
     def dwh_path(self):
         """DWHパスを取得"""
-        return "src/ml/data/dwh/data/house_price_dwh.duckdb"
+        return "src/data/warehouse/duckdb/data/house_price_dwh.duckdb"
     
     def test_dwh_file_exists(self, dwh_path):
         """DWHファイルが存在することを確認"""

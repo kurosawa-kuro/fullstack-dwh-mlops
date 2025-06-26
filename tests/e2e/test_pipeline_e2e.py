@@ -30,14 +30,14 @@ class TestPipelineE2E:
     
     def test_dwh_exists(self):
         """DWHが存在することを確認"""
-        dwh_path = "src/ml/data/dwh/data/house_price_dwh.duckdb"
+        dwh_path = "src/data/warehouse/duckdb/data/house_price_dwh.duckdb"
         assert os.path.exists(dwh_path), f"DWHが見つかりません: {dwh_path}"
     
     def test_model_files_exist(self):
         """モデルファイルが存在することを確認（オプション）"""
         model_files = [
-            "src/ml/models/trained/house_price_predictor_duckdb.pkl",
-            "src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl"
+            "src/ml/artifacts/house_price_predictor_duckdb.pkl",
+            "src/ml/artifacts/house_price_predictor_duckdb_encoders.pkl"
         ]
         
         existing_models = []
@@ -54,8 +54,8 @@ class TestPipelineE2E:
     def test_ensemble_model_exists(self):
         """アンサンブルモデルが存在することを確認（オプション）"""
         ensemble_files = [
-            "src/ml/models/trained/house_price_ensemble_duckdb.pkl",
-            "src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl"
+            "src/ml/artifacts/house_price_ensemble_duckdb.pkl",
+            "src/ml/artifacts/house_price_ensemble_duckdb_preprocessor.pkl"
         ]
         
         existing_ensembles = []
