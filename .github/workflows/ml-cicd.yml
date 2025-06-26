@@ -84,7 +84,7 @@ jobs:
           path: |
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-pip-${{ steps.cache-key.outputs.cache-key }}
+          key: ${{ runner.os }}-pip-${{ steps.cache-key.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -95,14 +95,13 @@ jobs:
           pip install pytest pytest-cov
           # MLflow バージョン確認
           python -c "import mlflow; print(f'✅ MLflow version: {mlflow.__version__}')"
-
-      - name: Cache Python packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pip
-            .venv
-          key: ${{ runner.os }}-pip-${{ steps.cache-key.outputs.cache-key }}
+          
+          # MLflow import パスのデバッグ
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+          python -c "
+          import mlflow, pathlib
+          print('🔍 MLflow import パス確認 (setup):', pathlib.Path(mlflow.__file__).resolve())
+          "
 
   # データ準備（並列実行）
   prepare-data:
@@ -124,7 +123,7 @@ jobs:
           path: |
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.cache-key }}
+          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -254,7 +253,7 @@ jobs:
           path: |
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.cache-key }}
+          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -267,7 +266,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: duckdb-dwh-${{ github.sha }}
-          path: src/ml/data/
+          path: .
 
       - name: Create model directories
         run: |
@@ -280,6 +279,15 @@ jobs:
           MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+          
+          # MLflow import パスのデバッグ
+          python -c "
+          import mlflow, pathlib, sys
+          print('🔍 MLflow import デバッグ情報:')
+          print('  - MLflow loaded from:', pathlib.Path(mlflow.__file__).resolve())
+          print('  - sys.path の先頭 3 件:', sys.path[:3])
+          print('  - PYTHONPATH:', '${PYTHONPATH}')
+          "
           
           python -c "
           import mlflow
@@ -360,7 +368,7 @@ jobs:
           path: |
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.cache-key }}
+          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -373,19 +381,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trained-models-${{ github.sha }}
-          path: src/ml/models/trained/
+          path: .
 
       - name: Download DWH artifacts
         uses: actions/download-artifact@v4
         with:
           name: duckdb-dwh-${{ github.sha }}
-          path: src/ml/data/
+          path: .
 
       - name: Download MLflow artifacts
         uses: actions/download-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.sha }}
-          path: mlruns/
+          path: .
 
       - name: Verify MLflow artifacts downloaded
         run: |
@@ -395,6 +403,13 @@ jobs:
           fi
           echo "✅ MLflowアーティファクトのダウンロード成功"
           echo "📊 ファイル数: $(find mlruns -type f | wc -l)"
+          
+          # MLflow import パスのデバッグ
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+          python -c "
+          import mlflow, pathlib
+          print('🔍 MLflow import パス確認 (test):', pathlib.Path(mlflow.__file__).resolve())
+          "
 
       - name: Run unit tests
         if: matrix.test-suite == 'unit'
@@ -406,7 +421,7 @@ jobs:
         if: matrix.test-suite == 'integration'
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=html --junitxml=integration-test-results.xml
+          pytest tests/integration/ -v --cov=src --cov-append --cov-report=xml --cov-report=html --junitxml=integration-test-results.xml
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -438,7 +453,7 @@ jobs:
           path: |
             ~/.cache/pip
             .venv
-          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.cache-key }}
+          key: ${{ runner.os }}-pip-${{ needs.setup.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -451,19 +466,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trained-models-${{ github.sha }}
-          path: src/ml/models/trained/
+          path: .
 
       - name: Download DWH artifacts
         uses: actions/download-artifact@v4
         with:
           name: duckdb-dwh-${{ github.sha }}
-          path: src/ml/data/
+          path: .
 
       - name: Download MLflow artifacts
         uses: actions/download-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.sha }}
-          path: mlruns/
+          path: .
 
       - name: Verify MLflow artifacts downloaded
         run: |
@@ -473,6 +488,13 @@ jobs:
           fi
           echo "✅ MLflowアーティファクトのダウンロード成功"
           echo "📊 ファイル数: $(find mlruns -type f | wc -l)"
+          
+          # MLflow import パスのデバッグ
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+          python -c "
+          import mlflow, pathlib
+          print('🔍 MLflow import パス確認 (model-performance):', pathlib.Path(mlflow.__file__).resolve())
+          "
 
       - name: Run model performance tests
         run: |
@@ -537,7 +559,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./test-results/coverage.xml
+          files: "./test-results/**/coverage.xml"
           flags: unittests
           name: codecov-umbrella
 
