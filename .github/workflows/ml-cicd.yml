@@ -125,6 +125,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r configs/requirements.txt
+
       - name: Create necessary directories
         run: |
           mkdir -p src/ml/data/raw
@@ -138,6 +143,9 @@ jobs:
 
       - name: Create sample data and build DWH
         run: |
+          # Pythonパスを設定
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+          
           # サンプルデータを作成
           python -c "
           import pandas as pd
@@ -247,6 +255,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r configs/requirements.txt
+
       - name: Download DWH artifacts
         uses: actions/download-artifact@v4
         with:
@@ -261,6 +274,7 @@ jobs:
 
       - name: Initialize MLflow
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           export MLFLOW_TRACKING_URI="file:./mlruns"
           export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
           
@@ -278,6 +292,7 @@ jobs:
 
       - name: Run ML pipeline
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           python src/ml/models/train_model.py \
             --config src/configs/model_config.yaml \
             --duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
@@ -286,6 +301,7 @@ jobs:
 
       - name: Verify model artifacts
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           ls -la src/ml/models/trained/
           python -c "
           import joblib
@@ -336,6 +352,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r configs/requirements.txt
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -357,11 +378,13 @@ jobs:
       - name: Run unit tests
         if: matrix.test-suite == 'unit'
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=html --junitxml=unit-test-results.xml
 
       - name: Run integration tests
         if: matrix.test-suite == 'integration'
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=html --junitxml=integration-test-results.xml
 
       - name: Upload test results
@@ -397,6 +420,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r configs/requirements.txt
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -411,12 +439,14 @@ jobs:
 
       - name: Run model performance tests
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_files_exist -v
           pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_load -v
           pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_predict -v
 
       - name: Test DuckDB integration
         run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
           python -c "
           import duckdb
           import joblib
