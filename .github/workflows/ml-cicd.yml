@@ -323,12 +323,22 @@ jobs:
             src/ml/models/trained/house_price_prediction_encoders.pkl
           retention-days: 30
 
-      - name: Upload MLflow artifacts
-        uses: actions/upload-artifact@v4
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.sha }}
           path: mlruns/
-          retention-days: 30
+        continue-on-error: true
+
+      - name: Check MLflow artifacts
+        run: |
+          if [ -d "mlruns" ] && [ "$(ls -A mlruns)" ]; then
+            echo "✅ MLflow artifacts found"
+            ls -la mlruns/
+          else
+            echo "⚠️  MLflow artifacts not found, continuing without MLflow"
+            mkdir -p mlruns
+          fi
 
   # テスト実行（並列実行）
   test:

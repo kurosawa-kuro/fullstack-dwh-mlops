@@ -1,5 +1,4 @@
-metabase対応 → Done
-CI修正
+/home/wsl/dev/mlops/fullstack-dwh-mlops/src/data/dwh/dwh/house_price_dbtの配置を見直す
 
 dbt 対応のCI修正
 dbt 基礎の集中学習
