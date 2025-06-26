@@ -144,85 +144,8 @@ jobs:
 
       - name: Create sample data and build DWH
         run: |
-          # Pythonパスを設定
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          
-          # サンプルデータを作成
-          python -c "
-          import pandas as pd
-          import os
-          
-          sample_data = pd.DataFrame({
-              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
-              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
-              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
-              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
-              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
-              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
-              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
-          })
-          
-          os.makedirs('src/ml/data/raw', exist_ok=True)
-          sample_data.to_csv('src/ml/data/raw/house_data.csv', index=False)
-          print('✅ サンプルデータを作成しました')
-          "
-          
-          # DuckDB DWHを構築
-          python -c "
-          import duckdb
-          import pandas as pd
-          
-          conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
-          
-          sample_data = pd.DataFrame({
-              'id': range(1, 11),
-              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
-              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
-              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
-              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
-              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
-              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
-              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
-          })
-          
-          conn.execute('DROP TABLE IF EXISTS bronze_raw_house_data')
-          conn.execute('CREATE TABLE bronze_raw_house_data AS SELECT * FROM sample_data')
-          
-          conn.execute('''
-            CREATE OR REPLACE VIEW v_house_analytics AS
-            SELECT 
-              id as transaction_id,
-              price,
-              sqft,
-              bedrooms,
-              bathrooms,
-              (price / sqft) as price_per_sqft,
-              (2025 - year_built) as house_age,
-              (bedrooms / bathrooms) as bed_bath_ratio,
-              location as location_name,
-              CASE 
-                WHEN location ILIKE '%suburban%' THEN 'Suburban'
-                WHEN location ILIKE '%urban%' THEN 'Urban'
-                ELSE 'Rural'
-              END as location_type,
-              condition as condition_name,
-              CASE 
-                WHEN condition = 'Excellent' THEN 5
-                WHEN condition = 'Good' THEN 4
-                WHEN condition = 'Fair' THEN 3
-                WHEN condition = 'Poor' THEN 2
-                ELSE 1
-              END as condition_score,
-              year_built as year_value,
-              CONCAT((year_built // 10) * 10, 's') as decade,
-              CONCAT((year_built // 100) + 1, 'th Century') as century,
-              CURRENT_DATE as transaction_date
-            FROM bronze_raw_house_data
-          ''')
-          
-          print('✅ DuckDB DWHを構築しました')
-          conn.close()
-          "
+          python scripts/create_dwh.py
 
       - name: Upload DWH artifacts
         uses: actions/upload-artifact@v4
@@ -267,6 +190,12 @@ jobs:
         with:
           name: duckdb-dwh-${{ github.sha }}
           path: .
+
+      - name: Verify DWH contents
+        run: |
+          echo "🔍 DuckDB DWH 内容確認:"
+          ls -la src/ml/data/dwh/data/
+          python scripts/verify_dwh.py
 
       - name: Create model directories
         run: |
