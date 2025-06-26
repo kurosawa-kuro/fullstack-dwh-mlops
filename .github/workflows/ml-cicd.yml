@@ -32,9 +32,8 @@ env:
   DB_PATH: "src/ml/data/dwh/data/house_price_dwh.duckdb"
   
   # MLflow設定（CI/CD環境ではローカルファイルシステムを使用）
-  MLFLOW_TRACKING_URI: "file:./mlruns"
+  MLFLOW_TRACKING_URI: "file:${{ github.workspace }}/mlruns"
   MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
-  MLFLOW_DISABLE_TRACKING: "false"  # CI環境でも有効化
   
   # ログ設定
   LOG_LEVEL: "INFO"
@@ -94,6 +93,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r configs/requirements.txt
           pip install pytest pytest-cov
+          # MLflow バージョン確認
+          python -c "import mlflow; print(f'✅ MLflow version: {mlflow.__version__}')"
 
       - name: Cache Python packages
         uses: actions/cache@v4
@@ -141,7 +142,6 @@ jobs:
           mkdir -p src/ml/data/dwh/config
           mkdir -p src/ml/models/trained
           mkdir -p logs
-          mkdir -p mlruns
 
       - name: Create sample data and build DWH
         run: |
@@ -261,9 +261,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow==3.1.0  # バージョン固定
           pip install -r configs/requirements.txt
-          python -c "import mlflow; print(f'MLflow version: {mlflow.__version__}')"
 
       - name: Download DWH artifacts
         uses: actions/download-artifact@v4
@@ -275,11 +273,10 @@ jobs:
         run: |
           mkdir -p src/ml/models/trained
           mkdir -p logs
-          mkdir -p mlruns
 
       - name: Initialize MLflow
         env:
-          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/mlruns"  # 絶対パスで指定
+          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/mlruns"
           MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
@@ -326,11 +323,12 @@ jobs:
 
       - name: Verify MLflow artifacts exist
         run: |
-          if [ ! -d "mlruns" ] || [ -z "$(ls -A mlruns 2>/dev/null)" ]; then
+          if [ ! -d "mlruns" ] || [ -z "$(find mlruns -type f | head -1)" ]; then
             echo "❌ MLflowアーティファクトが存在しません。CIを失敗させます。"
             exit 1
           fi
           echo "✅ MLflowアーティファクトが存在します"
+          echo "📊 ファイル数: $(find mlruns -type f | wc -l)"
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
@@ -391,11 +389,12 @@ jobs:
 
       - name: Verify MLflow artifacts downloaded
         run: |
-          if [ ! -d "mlruns" ] || [ -z "$(ls -A mlruns 2>/dev/null)" ]; then
+          if [ ! -d "mlruns" ] || [ -z "$(find mlruns -type f | head -1)" ]; then
             echo "❌ MLflowアーティファクトのダウンロードに失敗しました。CIを失敗させます。"
             exit 1
           fi
           echo "✅ MLflowアーティファクトのダウンロード成功"
+          echo "📊 ファイル数: $(find mlruns -type f | wc -l)"
 
       - name: Run unit tests
         if: matrix.test-suite == 'unit'
@@ -468,11 +467,12 @@ jobs:
 
       - name: Verify MLflow artifacts downloaded
         run: |
-          if [ ! -d "mlruns" ] || [ -z "$(ls -A mlruns 2>/dev/null)" ]; then
+          if [ ! -d "mlruns" ] || [ -z "$(find mlruns -type f | head -1)" ]; then
             echo "❌ MLflowアーティファクトのダウンロードに失敗しました。CIを失敗させます。"
             exit 1
           fi
           echo "✅ MLflowアーティファクトのダウンロード成功"
+          echo "📊 ファイル数: $(find mlruns -type f | wc -l)"
 
       - name: Run model performance tests
         run: |
@@ -551,3 +551,4 @@ jobs:
           echo "  - 並列ジョブ実行"
           echo "  - 重複処理の排除"
           echo "  - 条件分岐による効率化"
+          echo "  - MLflow設定の最適化"
