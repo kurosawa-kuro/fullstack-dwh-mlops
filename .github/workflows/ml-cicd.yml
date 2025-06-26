@@ -34,7 +34,7 @@ env:
   # MLflow設定（CI/CD環境ではローカルファイルシステムを使用）
   MLFLOW_TRACKING_URI: "file:./mlruns"
   MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
-  MLFLOW_DISABLE_TRACKING: "false"
+  MLFLOW_DISABLE_TRACKING: "false"  # CI環境でも有効化
   
   # ログ設定
   LOG_LEVEL: "INFO"
@@ -296,12 +296,14 @@ jobs:
       - name: Run ML pipeline
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
-          export MLFLOW_DISABLE_TRACKING="true"
+          export MLFLOW_TRACKING_URI="file:./mlruns"
+          export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
           python src/ml/models/train_model.py \
             --config src/configs/model_config.yaml \
             --duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
             --models-dir src/ml/models \
-            --view-name v_house_analytics
+            --view-name v_house_analytics \
+            --mlflow-tracking-uri "file:./mlruns"
 
       - name: Verify model artifacts
         run: |
@@ -323,22 +325,12 @@ jobs:
             src/ml/models/trained/house_price_prediction_encoders.pkl
           retention-days: 30
 
-      - name: Download MLflow artifacts
-        uses: actions/download-artifact@v4
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: mlflow-artifacts-${{ github.sha }}
           path: mlruns/
-        continue-on-error: true
-
-      - name: Check MLflow artifacts
-        run: |
-          if [ -d "mlruns" ] && [ "$(ls -A mlruns)" ]; then
-            echo "✅ MLflow artifacts found"
-            ls -la mlruns/
-          else
-            echo "⚠️  MLflow artifacts not found, continuing without MLflow"
-            mkdir -p mlruns
-          fi
+          retention-days: 30
 
   # テスト実行（並列実行）
   test:
@@ -388,7 +380,6 @@ jobs:
         with:
           name: mlflow-artifacts-${{ github.sha }}
           path: mlruns/
-        continue-on-error: true
 
       - name: Run unit tests
         if: matrix.test-suite == 'unit'
