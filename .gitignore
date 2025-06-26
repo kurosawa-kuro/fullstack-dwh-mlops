@@ -276,6 +276,12 @@ deployment/metabase/data/metabase.db.script.backup
 deployment/metabase/data/metabase.db/metabase.db.mv.db
 deployment/metabase/data/metabase.db/metabase.db.trace.db
 
+# Metabase Plugins (Driver JARs and sample databases)
+deployment/metabase/plugins/*.jar
+deployment/metabase/plugins/*.db.mv.db
+deployment/metabase/plugins/*.db.trace.db
+deployment/metabase/plugins/*.db.lock.db
+
 # DWH Database files
 src/ml/data/dwh/data/house_price_dwh.duckdb
 src/ml/data/dwh/data/house_price_dwh.duckdb.wal
