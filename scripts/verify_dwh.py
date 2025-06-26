@@ -6,16 +6,24 @@ CI/CD環境でDuckDBデータウェアハウスの内容を確認します
 
 import duckdb
 import os
+import sys
 
 def verify_dwh():
     """DuckDB DWHの内容を確認"""
     db_path = 'src/ml/data/dwh/data/house_price_dwh.duckdb'
+    wal_path = 'src/ml/data/dwh/data/house_price_dwh.duckdb.wal'
     
     if not os.path.exists(db_path):
         print(f"❌ Database file not found: {db_path}")
         return False
     
     print(f"✅ Database file exists: {db_path}")
+    
+    # WALファイルの確認
+    if os.path.exists(wal_path):
+        print(f"📄 WAL file exists: {wal_path}")
+    else:
+        print(f"📄 No WAL file found: {wal_path}")
     
     con = duckdb.connect(db_path)
     
@@ -37,15 +45,17 @@ def verify_dwh():
             sample = con.execute('SELECT * FROM v_house_analytics LIMIT 1').fetchone()
             print(f'📊 Sample row: {sample}')
             
+            con.close()
             return True
         except Exception as e:
             print(f'❌ Error querying v_house_analytics: {e}')
+            con.close()
             return False
     else:
         print('❌ No views found in database')
+        con.close()
         return False
-    
-    con.close()
 
 if __name__ == '__main__':
-    verify_dwh() 
+    if not verify_dwh():
+        sys.exit("❌ DWH verification failed") 

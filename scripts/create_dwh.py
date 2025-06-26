@@ -69,6 +69,10 @@ def build_dwh():
     # 確認
     count = con.execute('SELECT COUNT(*) FROM v_house_analytics').fetchone()[0]
     assert count == 10, f'❌ View creation failed: expected 10, got {count}'
+    
+    # WALをフラッシュして本体ファイルに反映
+    con.execute("PRAGMA checkpoint;")
+    
     print('✅ DuckDB DWH built & verified')
     con.close()
 

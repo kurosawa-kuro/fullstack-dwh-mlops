@@ -153,6 +153,7 @@ jobs:
           name: duckdb-dwh-${{ github.sha }}
           path: |
             src/ml/data/dwh/data/house_price_dwh.duckdb
+            src/ml/data/dwh/data/house_price_dwh.duckdb.wal
             src/ml/data/raw/house_data.csv
           retention-days: 30
 
